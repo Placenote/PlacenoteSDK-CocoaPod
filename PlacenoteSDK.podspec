@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name              = 'PlacenoteSDK'
-    s.version           = '1.6.1'
+    s.version           = '1.6.2'
     s.summary           = 'Placenote SDK brings persistence to AR apps.'
     s.homepage          = 'https://placenote.com/'
     s.description       = <<-DESC
@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
     s.license           = { :type => 'Placenote EULA', :file => 'LICENSE' }
 
     s.platform          = :ios, '11.0'
-    s.source            = { :git => 'https://github.com/Placenote/PlacenoteSDK-CocoaPod.git', :tag => 'v1.6.1' }
+    s.source            = { :git => 'https://github.com/Placenote/PlacenoteSDK-CocoaPod.git', :tag => 'v1.6.2' }
     s.swift_version     = '3.2'
 
     s.ios.deployment_target = '11.0'
