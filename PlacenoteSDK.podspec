@@ -1,11 +1,11 @@
 Pod::Spec.new do |s|
     s.name              = 'PlacenoteSDK'
     s.version           = '1.7'
-    s.summary           = 'Placenote SDK brings persistence to AR apps.'
+    s.summary           = 'Build apps that interact with the real world'
     s.homepage          = 'https://placenote.com/'
     s.description       = <<-DESC
-                            PlacenoteSDK: Bringing persistence to AR apps
 
+			    PlacenoteSDK: Build apps that interact with the real world
                             Homepage: https://placenote.com/
                             Online docs: https://developer.placenote.com/api/swift/
 
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
 
     s.platform          = :ios, '11.0'
     s.source            = { :git => 'https://github.com/Placenote/PlacenoteSDK-CocoaPod.git', :tag => 'v1.7' }
-    s.swift_version     = '3.2'
+    s.swift_version     = '4.0'
 
     s.ios.deployment_target = '11.0'
     s.vendored_frameworks = 'Placenote.framework'
