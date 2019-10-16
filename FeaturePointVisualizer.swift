@@ -87,29 +87,35 @@ public class FeaturePointVisualizer: PNDelegate {
   }
   
   /**
+   Callback to subscribe to the first localization event for loading assets
+   */
+  public func onLocalized() -> Void {
+  }
+    
+  /**
    Function to be called periodically to draw the pointcloud geometry
    */
   @objc private func drawPointcloud() {
-    if (LibPlacenote.instance.getMappingStatus() == LibPlacenote.MappingStatus.running) {
-      let landmarks = LibPlacenote.instance.getAllLandmarks();
+    if (LibPlacenote.instance.getStatus() == LibPlacenote.MappingStatus.running) {
+      let landmarks = LibPlacenote.instance.getMap();
       if (landmarks.count > 0) {
         addPointcloud(landmarks: landmarks, node: mapNode)
       }
     }
   }
-  
+    
   /**
    Function to be called periodically to draw the tracked points geometry
    */
   @objc private func drawTrackedPoints() {
-    if (LibPlacenote.instance.getMappingStatus() == LibPlacenote.MappingStatus.running) {
-      let trackedLandmarks = LibPlacenote.instance.getTrackedLandmarks();
+    if (LibPlacenote.instance.getStatus() == LibPlacenote.MappingStatus.running) {
+      let trackedLandmarks = LibPlacenote.instance.getTrackedFeatures();
       if (trackedLandmarks.count > 0) {
         addPointcloud(landmarks: trackedLandmarks, node: trackedPtsNode)
       }
     }
   }
-  
+    
   /**
    Function to that draws a pointcloud as a set of cubes from the input feature point array
    
@@ -124,10 +130,6 @@ public class FeaturePointVisualizer: PNDelegate {
     normals.reserveCapacity(landmarks.count*verticesPerCube)
     colors.reserveCapacity(landmarks.count*verticesPerCube)
     for lm in landmarks {
-      if (lm.maxViewAngle < 0.05 || lm.measCount < 4) {
-        continue
-      }
-      
       let pos:SCNVector3 = SCNVector3(x: lm.point.x, y: lm.point.y, z: lm.point.z)
       getCube(position: pos, size: 0.01, resultCb: {(cubeVerts: [SCNVector3], cubeNorms: [SCNVector3]) -> Void in
         vertices += cubeVerts

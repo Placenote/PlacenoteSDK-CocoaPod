@@ -1,20 +1,26 @@
 //
-//  CameraManager.swift
+//  LocalizationThumbnailSelector.swift
 //  PlacenoteSDK
 //
-//  Created by Yan Ma on 2018-01-09.
-//  Copyright © 2018 Vertical AI. All rights reserved.
+//  Created by Yan Ma on 2019-09-13.
 //
 
 import Foundation
+import VideoToolbox
+import os.log
 
 /// A helper class that takes the pose output from the LibPlacenote mapping/localization module
 /// and transform the ARKit camera to align the inertial map frame while maintaining high frame rate.
-public class CameraManager: PNDelegate {
-  private let verticesPerCube: Int = 36
-  private var camera: SCNNode
-  private var rootNode: SCNNode
-  private var cameraParent: SCNNode = SCNNode()
+public class LocalizationThumbnailSelector: PNDelegate {
+  private var maxLmSize: Int = -1
+  private var newThumbnailEvent: Event<UIImage?> = Event<UIImage?>()
+  
+  /// accessor to new thumbnail event
+  public var onNewThumbnail: Event<UIImage?> {
+    get {
+      return newThumbnailEvent
+    }
+  }
   
   /**
    Constructor of the camera manager. Removes the camera node from its parent, and insert an intermediate
@@ -24,16 +30,16 @@ public class CameraManager: PNDelegate {
    - Parameter scene: The scene we wish the LibPlacenote camera to exist
    - Parameter cam: camera node that is controlled by ARKit
    */
-  public init(scene: SCNScene, cam: SCNNode) {
-    rootNode = scene.rootNode
-    camera = cam
-    
-    rootNode.addChildNode(cameraParent)
-    cameraParent.position = SCNVector3(0, 0, 0)
-    cameraParent.addChildNode(camera)
-    
+  public init() {
     // IMPORTANT: need to run this line to subscribe to pose and status events
     LibPlacenote.instance.multiDelegate += self;
+  }
+  
+  private func setCurrentImageAsThumbnail() {
+    LibPlacenote.instance.setLocalizationThumbnail();
+    LibPlacenote.instance.getLocalizationThumbnail(thumbnailCb: {(thumbnail: UIImage?) -> Void in
+      self.newThumbnailEvent.raise(data: thumbnail)
+    });
   }
   
   /**
@@ -43,8 +49,15 @@ public class CameraManager: PNDelegate {
    - Parameter arkitPose: Odometry pose with respect to the ARKit coordinate frame that corresponds with 'outputPose' in time.
    */
   public func onPose(_ outputPose: matrix_float4x4, _ arkitPose: matrix_float4x4) -> Void {
-    if (LibPlacenote.instance.getStatus() == LibPlacenote.MappingStatus.running) {
-      cameraParent.simdTransform = outputPose*arkitPose.inverse
+    if (LibPlacenote.instance.getMode() != LibPlacenote.MappingMode.mapping) {
+      return
+    }
+    
+    let landmarks = LibPlacenote.instance.getTrackedFeatures();
+    if (landmarks.count > maxLmSize) {
+      maxLmSize = landmarks.count
+      os_log("Updated thumbnail with %d", log: OSLog.default, type: .error, maxLmSize)
+      setCurrentImageAsThumbnail()
     }
   }
   
@@ -55,7 +68,16 @@ public class CameraManager: PNDelegate {
    - Parameter currStatus: Current status of the mapping engine
    */
   public func onStatusChange(_ prevStatus: LibPlacenote.MappingStatus, _ currStatus: LibPlacenote.MappingStatus) {
-    
+    if (prevStatus != LibPlacenote.MappingStatus.waiting && currStatus == LibPlacenote.MappingStatus.waiting) {
+      maxLmSize = -1;
+    }
+    else if (prevStatus == LibPlacenote.MappingStatus.waiting) {
+      if (LibPlacenote.instance.getMode() == LibPlacenote.MappingMode.localizing) {
+        LibPlacenote.instance.getLocalizationThumbnail(thumbnailCb: {(thumbnail: UIImage?) -> Void in
+          self.newThumbnailEvent.raise(data: thumbnail)
+        });
+      }
+    }
   }
   
   /**
