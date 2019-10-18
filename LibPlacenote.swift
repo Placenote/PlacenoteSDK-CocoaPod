@@ -17,11 +17,7 @@ extension matrix_float4x4 {
   /**
    Calculate position vector of a pose matrix
    
-   - Returns: A SCNVector3 from the translation component
-   public func onLocalized() {
-   <#code#>
-   }
-   s of the matrix
+   - Returns: A SCNVector3 from the translation components of the matrix
    */
   public func position() -> SCNVector3 {
     return SCNVector3(columns.3.x, columns.3.y, columns.3.z)
@@ -93,7 +89,6 @@ extension Date {
 }
 
 
-
 /// Interface to be implemented by listener classes that subscribes to pose and mapping status from LibPlacenote
 public protocol PNDelegate {
   /**
@@ -121,13 +116,21 @@ public protocol PNDelegate {
 
 /// Swift wrapper of LibPlacenote C API
 public class LibPlacenote {
+  /// Alias for the callback closure protocol that subscribes to the Placenote pose and its corresponding ARKit pose.
   public typealias PoseCallback = (_ outputPose: matrix_float4x4, _ arkitPose: matrix_float4x4)-> Void
+  /// Alias for the callback closure protocol that subscribes to the map ID of the saveMap operation, could return nil in the case of failure.
   public typealias SaveMapCallback = (_ mapId: String?) -> Void
+  /// Alias for the callback closure protocol that subscribes to the progress of a file transfer operation to/from the placenote cloud.
   public typealias FileTransferCallback = (_ completed: Bool, _ faulted: Bool, _ percentage: Float) -> Void
+  /// Alias for the callback closure protocol that subscribes to the success/failure of a deleteMap operation.
   public typealias DeleteMapCallback = (_ deleted: Bool) -> Void
+  /// Alias for the callback closure protocol that subscribes to the success/failure of a saveMetaData operation.
   public typealias MetadataSavedCallback = (_ success: Bool) -> Void
+  /// Alias for the callback closure protocol that subscribes to the success/failure of a gaveMetaData operation and the metadata it returns.
   public typealias GetMetadataCallback = (_ success: Bool, _ metadata: MapMetadata) -> Void
+  /// Alias for the callback closure protocol that subscribes to the success/failure of a listMaps operation and the map list it returns.
   public typealias ListMapCallback = (_ success: Bool, _ mapList: [String: MapMetadata]) -> Void
+  /// Alias for the callback closure protocol that subscribe to the success/failure status of the initialization process.
   public typealias OnInitializedCallback = (_ success: Bool) -> Void
 
   
@@ -143,15 +146,14 @@ public class LibPlacenote {
     case lost
   }
     
-    /// Enum that indicates the mapping quality of the current area in the map. Correlates with the the likelihood of localization at that point in the map.
-    public enum MappingQuality: Int {
-        
-        // indicates that the current keyframe during mapping does have enough tracked features to be well localizable.
-        case limited = 0
-        
-        // indicates that the current keyframe during mapping does enough tracked features to be well localizable.
-        case good = 1
-    }
+  /// Enum that indicates the mapping quality of the current area in the map. Correlates with the the likelihood of localization at that point in the map.
+  public enum MappingQuality: Int {
+    /// Indicates that the current keyframe during mapping does have enough tracked features to be well localizable.
+    case limited = 0
+    
+    /// Indicates that the current keyframe during mapping does enough tracked features to be well localizable.
+    case good = 1
+  }
     
   
   /// Enums that indicates the mode of the LibPlacenote mapping module
@@ -176,6 +178,7 @@ public class LibPlacenote {
   /// Struct that contains location data for the map. All fields are required.
   public class MapLocation: Codable
   {
+    /// Constructor
     public init() {}
 
     /// The GPS latitude
@@ -211,16 +214,12 @@ public class LibPlacenote {
     /// For other help, contact us on Slack.
     public var userdataQuery: String? = nil
     
-    /// <summary>
     /// Helper function for setting newerThan via a DateTime
-    /// </summary>
     public func setNewerThan(dt: Date) -> Void {
       newerThan = Double(dt.millisecondsSince1970);
     }
     
-    /// <summary>
     /// Helper function for setting olderThan via a DateTime
-    /// </summary>
     public func setOlderThan(dt: Date)  -> Void {
       olderThan = Double(dt.millisecondsSince1970);
     }
@@ -229,6 +228,7 @@ public class LibPlacenote {
   /// Struct for searching maps by location. All fields are required.
   public class MapLocationSearch: Codable
   {
+    /// Constructor
     public init() {}
 
     /// The GPS latitude for the center of the search circle.
@@ -242,6 +242,7 @@ public class LibPlacenote {
   /// Struct for setting map metadata. All fields are optional.
   public class MapMetadataSettable
   {
+    /// Constructor.
     public init() {}
 
     /// The map name.
@@ -263,8 +264,9 @@ public class LibPlacenote {
     public var created: UInt64? = nil
   }
   
-  /// Static instance of the LibPlacenote singleton
   private static var _instance = LibPlacenote()
+  
+  /// Accessor to static instance of the LibPlacenote singleton
   public static var instance: LibPlacenote {
     get {
         return _instance
@@ -476,8 +478,10 @@ public class LibPlacenote {
     return statusEnum;
   }
     
-  /*
-   Get the current quality of the mapped keyframe
+  /**
+   Return the current mapping quality of a mapping session
+   
+   - Returns: A MappingQuality that indicates the mapping quality of current frames
    */
   public func getMappingQuality () -> MappingQuality {
     let landmarks = getTrackedFeatures();
@@ -1199,8 +1203,7 @@ public class LibPlacenote {
    - Parameter getMetadataCb: async callback that returns meta in the form of Libplacenote.metadata.
                               Metadata is empty if the mapid is incorrect or does not exist
    */
-  
-  public func getMapMetadata (mapId: String, getMetadataCb: @escaping GetMetadataCallback) -> Void {
+  public func getMetadata (mapId: String, getMetadataCb: @escaping GetMetadataCallback) -> Void {
     
     let cbCtx: CallbackContext = CallbackContext(id: UUID().uuidString, ptr: self)
     getMetadataCbDict[cbCtx.callbackId] = getMetadataCb
@@ -1280,8 +1283,8 @@ public class LibPlacenote {
    - Returns: False if the SDK was not initialized, or metadataJson was invalid.
    True otherwise.
    */
-  public func setMapMetadata(mapId: String, metadata: MapMetadataSettable) -> Bool {
-    return setMapMetadata(mapId: mapId, metadata: metadata, metadataSavedCb: {(success:Bool) -> Void in
+  public func setMetadata(mapId: String, metadata: MapMetadataSettable) -> Bool {
+    return setMetadata(mapId: mapId, metadata: metadata, metadataSavedCb: {(success:Bool) -> Void in
     })
   }
 
@@ -1297,7 +1300,7 @@ public class LibPlacenote {
    - Returns: False if the SDK was not initialized, or metadataJson was invalid.
      True otherwise.
    */
-  public func setMapMetadata(mapId: String, metadata: MapMetadataSettable, metadataSavedCb: @escaping MetadataSavedCallback) -> Bool {
+  public func setMetadata(mapId: String, metadata: MapMetadataSettable, metadataSavedCb: @escaping MetadataSavedCallback) -> Bool {
     let cbCtx: CallbackContext = CallbackContext(id: UUID().uuidString, ptr: self)
     
     setMetadataCbDict[cbCtx.callbackId] = metadataSavedCb
@@ -1366,7 +1369,7 @@ public class LibPlacenote {
 
    - Parameter uploadProgressCb: callback to monitor upload progress of the dataset
    */
-  public func startReportRecord(uploadProgressCb: @escaping FileTransferCallback) -> Void {
+  public func startRecordDataset(uploadProgressCb: @escaping FileTransferCallback) -> Void {
     let cbCtx: CallbackContext = CallbackContext(id: UUID().uuidString, ptr: self)
     
     fileTransferCbDict[cbCtx.callbackId] = uploadProgressCb
